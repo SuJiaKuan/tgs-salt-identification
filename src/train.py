@@ -27,6 +27,13 @@ def coverage_to_class(coverage):
             return COVERAGE_CLASS_THRESHOLDS.index(threshold)
 
 
+def data_augmentation(x_train, y_train):
+    x_train_aug = np.append(x_train, [np.fliplr(x) for x in x_train], axis=0)
+    y_train_aug = np.append(y_train, [np.fliplr(x) for x in y_train], axis=0)
+
+    return x_train_aug, y_train_aug
+
+
 def main(epochs=100, batch_size=32):
     train_df = pd.read_csv(TRAIN_DF_PATH)
 
@@ -55,6 +62,8 @@ def main(epochs=100, batch_size=32):
         test_size=0.2,
         stratify=coverage_classes,
     )
+
+    x_train, y_train = data_augmentation(x_train, y_train)
 
     model = unet((IMG_SIZE, IMG_SIZE, 1))
     model.compile(loss='binary_crossentropy',
