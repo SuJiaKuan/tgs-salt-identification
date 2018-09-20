@@ -6,6 +6,7 @@ import numpy as np
 from keras.models import load_model
 
 from image_proc import apply_mask
+from metrics import iou_metric
 from config import TEST_IMGS_DIR
 from config import IMG_SIZE
 from config import PREDICT_THRESHOLD
@@ -13,7 +14,7 @@ from config import MASK_COLOR
 
 
 def main(model_path, img_id):
-    model = load_model(model_path)
+    model = load_model(model_path, custom_objects={'iou_metric': iou_metric})
 
     img_path = os.path.join(TEST_IMGS_DIR, '{}.png'.format(img_id))
     img = cv2.imread(img_path)

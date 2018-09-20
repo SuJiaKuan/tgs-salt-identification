@@ -10,6 +10,7 @@ from keras.preprocessing.image import load_img
 from sklearn.model_selection import train_test_split
 
 from models import unet
+from metrics import iou_metric
 from config import TRAIN_DF_PATH
 from config import TRAIN_IMGS_DIR
 from config import TRAIN_MASKS_DIR
@@ -56,14 +57,16 @@ def main(epochs=100, batch_size=32):
     )
 
     model = unet((IMG_SIZE, IMG_SIZE, 1))
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
+    model.compile(loss='binary_crossentropy',
+                  optimizer='adam',
+                  metrics=[iou_metric])
 
     if not os.path.exists(MODELS_DIR):
         os.makedirs(MODELS_DIR)
     model_output_path = '{}/unet_{}.model'.format(MODELS_DIR, int(time.time()))
 
     model_checkpoint = ModelCheckpoint(model_output_path,
-                                       monitor='val_acc',
+                                       monitor='val_iou_metric',
                                        mode='max',
                                        save_best_only=True,
                                        verbose=1)
