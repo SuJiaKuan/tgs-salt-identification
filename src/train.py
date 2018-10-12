@@ -9,6 +9,7 @@ from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import load_img
 from sklearn.model_selection import train_test_split
 
+from image_proc import upsample
 from models import unet
 from metrics import iou_metric
 from config import TRAIN_DF_PATH
@@ -16,6 +17,7 @@ from config import TRAIN_IMGS_DIR
 from config import TRAIN_MASKS_DIR
 from config import MODELS_DIR
 from config import IMG_SIZE
+from config import IMG_MODEL_SIZE
 
 
 COVERAGE_CLASS_THRESHOLDS = [x / 10.0 for x in range(11)]
@@ -44,7 +46,7 @@ def main(epochs=100, batch_size=32):
     print('Loading training data')
     for img_id in tqdm(train_df.id):
         img_path = os.path.join(TRAIN_IMGS_DIR, '{}.png'.format(img_id))
-        img = np.array(load_img(img_path,  color_mode='grayscale')) / 255
+        img = np.array(load_img(img_path, color_mode='grayscale')) / 255
         imgs.append(img)
 
         mask_path = os.path.join(TRAIN_MASKS_DIR, '{}.png'.format(img_id))
@@ -57,15 +59,18 @@ def main(epochs=100, batch_size=32):
     print('Training data loaded')
 
     x_train, x_val, y_train, y_val = train_test_split(
-        np.array(imgs).reshape(-1, IMG_SIZE, IMG_SIZE, 1),
-        np.array(masks).reshape(-1, IMG_SIZE, IMG_SIZE, 1),
+        np.array(list(map(upsample, imgs))).reshape(-1, IMG_MODEL_SIZE, IMG_MODEL_SIZE, 1),
+        np.array(list(map(upsample, masks))).reshape(-1, IMG_MODEL_SIZE, IMG_MODEL_SIZE, 1),
         test_size=0.2,
         stratify=coverage_classes,
     )
 
     x_train, y_train = data_augmentation(x_train, y_train)
 
-    model = unet((IMG_SIZE, IMG_SIZE, 1))
+    x_train = np.repeat(x_train, 3, axis=3)
+    x_val = np.repeat(x_val, 3, axis=3)
+
+    model = unet((IMG_MODEL_SIZE, IMG_MODEL_SIZE, 3))
     model.compile(loss='binary_crossentropy',
                   optimizer='adam',
                   metrics=[iou_metric])

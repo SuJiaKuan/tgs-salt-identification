@@ -9,6 +9,7 @@ TEST_MASKS_DIR = os.path.join(DATA_ROOT_DIR, 'test/images')
 MODELS_DIR = '../models'
 
 IMG_SIZE = 101
+IMG_MODEL_SIZE = 128
 
 MASK_COLOR = (33, 50, 230)
 
