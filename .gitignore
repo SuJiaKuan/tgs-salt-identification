@@ -121,5 +121,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# Generated weights of models
-/models
+# Generated training results.
+/results

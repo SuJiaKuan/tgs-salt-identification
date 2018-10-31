@@ -1,7 +1,9 @@
 import os
+import pickle
 import time
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -15,7 +17,7 @@ from metrics import iou_metric
 from config import TRAIN_DF_PATH
 from config import TRAIN_IMGS_DIR
 from config import TRAIN_MASKS_DIR
-from config import MODELS_DIR
+from config import RESULTS_DIR
 from config import IMG_SIZE
 from config import IMG_MODEL_SIZE
 
@@ -34,6 +36,35 @@ def data_augmentation(x_train, y_train):
     y_train_aug = np.append(y_train, [np.fliplr(x) for x in y_train], axis=0)
 
     return x_train_aug, y_train_aug
+
+
+def save_history_raw(history, raw_output_path):
+    with open(raw_output_path, 'wb') as file_out:
+        pickle.dump(history.history, file_out)
+    print('History raw saved to {}'.format(raw_output_path))
+
+
+def save_history_plot(history, plot_output_path):
+    fig, (ax_loss, ax_score) = plt.subplots(1, 2, figsize=(15,5))
+
+    ax_loss.plot(history.epoch,
+                 history.history['loss'],
+                 label='Train loss')
+    ax_loss.plot(history.epoch,
+                 history.history['val_loss'],
+                 label='Validation loss')
+    ax_loss.legend()
+
+    ax_score.plot(history.epoch,
+                  history.history['iou_metric'],
+                  label='Train score')
+    ax_score.plot(history.epoch,
+                  history.history['val_iou_metric'],
+                  label='Validation score')
+    ax_score.legend()
+
+    fig.savefig(plot_output_path, dpi=fig.dpi)
+    print('History plot saved to {}'.format(plot_output_path))
 
 
 def main(epochs=100, batch_size=32):
@@ -75,9 +106,12 @@ def main(epochs=100, batch_size=32):
                   optimizer='adam',
                   metrics=[iou_metric])
 
-    if not os.path.exists(MODELS_DIR):
-        os.makedirs(MODELS_DIR)
-    model_output_path = '{}/unet_{}.model'.format(MODELS_DIR, int(time.time()))
+    result_dir = os.path.join(RESULTS_DIR, str(time.time()))
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
+    model_output_path = os.path.join(result_dir, 'unet_resnet50.model')
+    raw_output_path = os.path.join(result_dir, 'history.pickle')
+    plot_output_path = os.path.join(result_dir, 'plot.png')
 
     model_checkpoint = ModelCheckpoint(model_output_path,
                                        monitor='val_iou_metric',
@@ -85,14 +119,17 @@ def main(epochs=100, batch_size=32):
                                        save_best_only=True,
                                        verbose=1)
 
-    model.fit(x_train,
-              y_train,
-              validation_data=[x_val, y_val],
-              epochs=epochs,
-              batch_size=batch_size,
-              callbacks=[model_checkpoint],
-              shuffle=True,
-              verbose=1)
+    history = model.fit(x_train,
+                        y_train,
+                        validation_data=[x_val, y_val],
+                        epochs=epochs,
+                        batch_size=batch_size,
+                        callbacks=[model_checkpoint],
+                        shuffle=True,
+                        verbose=1)
+
+    save_history_raw(history, raw_output_path)
+    save_history_plot(history, plot_output_path)
 
 
 if __name__ == '__main__':

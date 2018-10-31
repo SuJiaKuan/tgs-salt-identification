@@ -6,7 +6,7 @@ TRAIN_IMGS_DIR = os.path.join(DATA_ROOT_DIR, 'train/images')
 TRAIN_MASKS_DIR = os.path.join(DATA_ROOT_DIR, 'train/masks')
 TEST_MASKS_DIR = os.path.join(DATA_ROOT_DIR, 'test/images')
 
-MODELS_DIR = '../models'
+RESULTS_DIR = '../results'
 
 IMG_SIZE = 101
 IMG_MODEL_SIZE = 128
